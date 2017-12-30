@@ -1,3 +1,15 @@
+# 3.8.1 (2017-11-08)
+
+ * Clear authorization header on cross-domain redirect
+
+# 3.8.0
+
+ * Added support for "globally" defined headers and event handlers via `superagent.agent()`. It now remembers default settings for all its requests.
+ * Added optional callback to `.retry()` (Alexander Murphy)
+ * Unified auth args handling in node/browser (Edmundo Alvarez)
+ * Fixed error handling in zlib pipes (Kornel)
+ * Documented that 3xx status codes are errors (Mickey Reiss)
+
 # 3.7.0 (2017-10-17)
 
  * Limit maximum response size. Prevents zip bombs (Kornel)
