@@ -1,0 +1,12 @@
+{ "token"  : "Token du bot",
+  "prefix" : "./",
+  "version" : "1.1.0 (30/12/2017)",
+  "botname" : "WinkBOT",
+  "author" : "Atnode",
+  "color" : "#FFCC4D",
+  "wolfram" : "Code de l'API de Wolfram",
+  "giphy" : "Code de l'API de Giphy",
+  "youtube" : "Code de l'API de YouTube",
+  "weather" : "Code de l'API de OpenWeatherMap",
+  "owner" : "Code de l'identifiant du propriétaire du bot"
+}
