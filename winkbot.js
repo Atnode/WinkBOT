@@ -326,8 +326,8 @@ bot.on("message", async message => {
 				beforeid = "https://www.youtube.com/channel/"
 				id = result.items[0].id.channelId
 			    }
-			}
                     message.reply("résultat de votre recherche sur YouTube :\n" + beforeid + id)
+			}
                 }
 
             });
@@ -492,6 +492,7 @@ bot.on("message", async message => {
         message.author.sendMessage({
             embed
         });
+	    .catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
     }
 
     if (command === "help") {
@@ -522,6 +523,7 @@ bot.on("message", async message => {
             message.author.sendMessage({
                 embed
             })
+		.catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
 
         } else {
             const embed = new Discord.RichEmbed()
@@ -545,6 +547,7 @@ bot.on("message", async message => {
             message.author.sendMessage({
                 embed
             })
+		.catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
 
         }
 
