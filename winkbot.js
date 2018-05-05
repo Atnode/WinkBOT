@@ -40,7 +40,7 @@ var weatherEmoji = {
 };
 
 bot.on('ready', () => {
-    bot.user.setGame('Aide : ' + config.prefix + 'help', 'http://perdu.com/')
+    bot.user.setActivity('Aide : ' + config.prefix + 'help')
     bot.user.setStatus('online');
 })
 
@@ -121,7 +121,14 @@ bot.on("message", async message => {
                     body = body.split("\\").join("");
                     var obj = JSON.parse(body);
                     obj = obj["data"].url;
-                    message.reply("votre gif :\n" + obj);
+			if (!obj)
+			{
+				message.reply("Je n'ai rien trouvé")
+			}
+			else
+			{
+                    		message.reply("votre gif :\n" + obj);
+			}
                 }
             });
 
@@ -302,18 +309,24 @@ bot.on("message", async message => {
                     console.log(JSON.stringify(result, null, 2));
                     let beforeid = "nothing"
                     let id = "nothing"
-                    if (result.items[0].id.kind === "youtube#video") {
-                        beforeid = "https://www.youtube.com/watch?v="
-                        id = result.items[0].id.videoId
-                    } else if (result.items[0].id.kind === "youtube#playlist") {
-                        beforeid = "https://www.youtube.com/playlist?list="
-                        id = result.items[0].id.playlistId
-                    } else if (result.items[0].id.kind === "youtube#channel") {
-                        beforeid = "https://www.youtube.com/channel/"
-                        id = result.items[0].id.channelId
-                    } else {
-                        return message.reply("aucun résultat... :frowning:")
-                    }
+			
+		    	if (!result || !result.items || result.items.length < 1)
+			{
+				message.reply("Je n'ai rien trouvé")
+			}
+			else
+			{
+			    if (result.items[0].id.kind === "youtube#video") {
+				beforeid = "https://www.youtube.com/watch?v="
+				id = result.items[0].id.videoId
+			    } else if (result.items[0].id.kind === "youtube#playlist") {
+				beforeid = "https://www.youtube.com/playlist?list="
+				id = result.items[0].id.playlistId
+			    } else if (result.items[0].id.kind === "youtube#channel") {
+				beforeid = "https://www.youtube.com/channel/"
+				id = result.items[0].id.channelId
+			    }
+			}
                     message.reply("résultat de votre recherche sur YouTube :\n" + beforeid + id)
                 }
 
