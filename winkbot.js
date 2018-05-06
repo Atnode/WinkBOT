@@ -12,32 +12,15 @@ var exec = require('child_process').exec;
 var request = require('request');
 const superagent = require("superagent");
 
-var google = require('google')
+var MD5 = require("crypto-js/md5");
+var SHA256 = require("crypto-js/sha256");
+
+let price = require('crypto-price')
 
 var YouTube = require('youtube-node');
 var youTube = new YouTube();
 youTube.setKey(config.youtube);
 
-var weatherEmoji = {
-    "01d": ":sun_with_face:",
-    "01n": ":full_moon_with_face:",
-    "02d": ":white_sun_small_cloud:",
-    "02n": ":white_sun_small_cloud:",
-    "03d": ":cloud:",
-    "03n": ":cloud:",
-    "04d": ":white_sun_cloud:",
-    "04n": ":white_sun_cloud:",
-    "09d": ":cloud_rain:",
-    "09n": ":cloud_rain:",
-    "10d": ":white_sun_rain_cloud:",
-    "10n": ":cloud_rain:",
-    "11d": ":thunder_cloud_rain:",
-    "11n": ":thunder_cloud_rain:",
-    "13d": ":cloud_snow:",
-    "13n": ":cloud_snow:",
-    "50d": ":fog:",
-    "50n": ":fog:"
-};
 
 bot.on('ready', () => {
     bot.user.setActivity('Aide : ' + config.prefix + 'help')
@@ -62,7 +45,7 @@ bot.on("message", async message => {
         const sayMessage = args.join(" ");
         var say = message.content.substring(5);
         if (say == '') {
-            if (message.author.id == (config.owner)) {
+            if ((message.author.id == (config.owner)) || (message.member.hasPermission('KICK_MEMBERS'))) {
                 message.reply('vous devez mettre une phrase.')
                 message.delete()
             } else {
@@ -71,7 +54,7 @@ bot.on("message", async message => {
             }
         }
         if (say) {
-            if (message.author.id == (config.owner)) {
+            if ((message.author.id == (config.owner)) || (message.member.hasPermission('KICK_MEMBERS'))) {
                 if (say.startsWith(' ./say')) {
                     message.reply('la commande ne peut pas se superposer.')
                     message.delete()
@@ -121,33 +104,43 @@ bot.on("message", async message => {
                     body = body.split("\\").join("");
                     var obj = JSON.parse(body);
                     obj = obj["data"].url;
-			if (!obj)
-			{
-				message.reply("Je n'ai rien trouvé")
-			}
-			else
-			{
-                    		message.reply("votre gif :\n" + obj);
-			}
+                    if (!obj) {
+                        message.reply("je n'ai rien trouvé. :disappointed_relieved:")
+                    } else {
+                        message.reply("votre gif :\n" + obj);
+                    }
                 }
             });
 
         }
     }
 
+    if (command === "dog") {
+        request('https://random.dog/woof.json?filter=mp4,webm', (e, r, b) => {
+            let pic = JSON.parse(b)
+            const embed = new Discord.RichEmbed()
+                .setTitle("Votre chien :dog: :")
+                .setColor(config.color)
+                .setFooter("WinkBOT " + config.version)
+                .setImage(pic.url)
+                .setTimestamp()
+            message.channel.send({
+                embed
+            });
+        })
+    }
     if (command === "cat") {
-        const {
-            body
-        } = await superagent
-            .get('http://random.cat/meow');
-        const embed = new Discord.RichEmbed()
-            .setColor(config.color)
-            .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
-            .setTimestamp()
-            .setTitle("Votre chat :cat: :")
-            .setImage(body.file)
-        message.reply({
-            embed
+        request('http://aws.random.cat/meow?filter=mp4,webm', (e, r, b) => {
+            let pic = JSON.parse(b)
+            const embed = new Discord.RichEmbed()
+                .setTitle("Votre chat :cat: :")
+                .setColor(config.color)
+                .setFooter("WinkBOT " + config.version)
+                .setImage(pic.file)
+                .setTimestamp()
+            message.channel.send({
+                embed
+            });
         })
     }
 
@@ -169,7 +162,7 @@ bot.on("message", async message => {
         if (avatar == '') {
             const embed = new Discord.RichEmbed()
                 .setColor(config.color)
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setTimestamp()
                 .setTitle("Avatar de " + message.author.username)
                 .setImage(message.author.avatarURL)
@@ -183,7 +176,7 @@ bot.on("message", async message => {
             let mentionedUser = message.mentions.users.first()
             const embed = new Discord.RichEmbed()
                 .setColor(config.color)
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setTimestamp()
                 .setTitle("Avatar de " + mentionedUser.username)
                 .setImage(mentionedUser.avatarURL)
@@ -193,58 +186,29 @@ bot.on("message", async message => {
         }
     }
 
-    if (command === "weather") {
-        var weather = message.content.substring(9);
-        if (weather == '') {
-            message.reply("vous devez entrer un mot clef après " + config.prefix + "weather. :wink:");
-        } else {
-            var search = "http://api.openweathermap.org/data/2.5/weather?q=" + weather + "&appid=" + config.weather + "&units=metric";
-            console.log(search);
-            request(search, function(error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var obj = JSON.parse(body);
-                    const embed = new Discord.RichEmbed()
-                    embed.setTitle('Météo à ' + obj.name + ', ' + obj.sys.country)
-                        .setColor(config.color)
-                        .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
-                        .setTimestamp()
-                        .addField('Temps :', weatherEmoji[obj.weather[0].icon])
-                        .addField('Météo :', obj.weather[0].main + ' - ' + obj.weather[0].description)
-                        .addField('Température actuelle :', obj.main.temp + '°C')
-                        .addField('Température maximale :', obj.main.temp_max + '°C')
-                        .addField('Température minimale :', obj.main.temp_min + '°C')
-                        .addField('Vent :', obj.wind.speed);
-                    message.reply({
-                        embed
-                    });
-                }
-            });
-
-        }
-    }
 
     if (command === "userinfo") {
         var userinfo = message.content.substring(10);
 
 
         if (userinfo == '') {
+
             var game = "Jeu"
             if (!message.author.presence.game) {
-                game = "Rien"
+                game = "Rien pour le moment..."
             } else {
                 game = message.author.presence.game.name
             }
             const embed = new Discord.RichEmbed()
             embed.setTitle('Informations sur l’utilisateur')
                 .setColor(config.color)
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setThumbnail(message.author.avatarURL)
                 .setTimestamp()
-                .addField('Pseudo :', message.author.username)
-                .addField('ID de l’utilisateur :', message.author.id)
-                .addField('Joue à :', game)
-                .addField('Est-ce un bot ?', message.author.bot)
-                .addField('Date d’inscription :', message.author.createdAt);
+                .addField('Pseudo :', `${message.author.username}` + '#' + `${message.author.discriminator}`, true)
+                .addField('Joue à :', `${game}`, true)
+                .addField('Est-ce un bot ?', `${message.author.bot}`, true)
+                .addField('Date d’inscription :', `${message.author.createdAt}`, true);
             message.reply({
                 embed
             });
@@ -255,41 +219,50 @@ bot.on("message", async message => {
             let mentionedUser = message.mentions.users.first()
             var game = "Jeu"
             if (!mentionedUser.presence.game) {
-                game = "Rien"
+                game = "Rien pour le moment..."
             } else {
                 game = mentionedUser.presence.game.name
             }
             const embed = new Discord.RichEmbed()
             embed.setTitle('Informations sur l’utilisateur')
                 .setColor(config.color)
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setThumbnail(mentionedUser.avatarURL)
                 .setTimestamp()
-                .addField('Pseudo', mentionedUser.username)
-                .addField('ID de l’utilisateur :', mentionedUser.id)
-                .addField('Joue à :', game)
-                .addField('Est-ce un bot ?', mentionedUser.bot)
-                .addField('Date d’inscription :', mentionedUser.createdAt);
+                .addField('Pseudo :', `${mentionedUser.username}` + '#' + `${mentionedUser.discriminator}`, true)
+                .addField('Joue à :', `${game}`, true)
+                .addField('Est-ce un bot ?', `${message.author.bot}`, true)
+                .addField('Date d’inscription :', `${message.author.createdAt}`, true);
             message.reply({
                 embed
             });
         }
     }
 
+    if (command === "invite") {
+        message.reply("vous avez envie de m'inviter sur un autre serveur ?\nCliquez sur ce lien ! :smiley:\nhttps://discordapp.com/oauth2/authorize?client_id=" + bot.user.id + "&scope=bot&permissions=248903")
+    }
+
+    if (command === "github") {
+        message.reply("alors comme ça vous voulez voir mon repos Github pour me disséquer ?\nPas de soucis ! Je suis un Bot, je ne ressens pas la douleur ! :smiley:\nhttps://github.com/Atnode/WinkBOT")
+    }
+
     if (command === "serverinfo") {
         const embed = new Discord.RichEmbed()
         embed.setTitle('Informations à propos de ce serveur')
             .setColor(config.color)
-            .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+            .setFooter("WinkBOT " + config.version)
             .setThumbnail(message.guild.iconURL)
             .setTimestamp()
-            .addField('Nom du serveur :', message.guild.name)
-            .addField('Nombre de membres :', message.guild.members.size)
-            .addField('Date de création de ce serveur :', message.guild.createdAt)
-            .addField('Région du serveur :', message.guild.region)
-            .addField('Niveau de vérification du serveur :', message.guild.verificationLevel)
-            .addField('ID du serveur :', message.guild.id)
-            .addField('Pseudo du propriétaire de ce serveur :', message.guild.owner)
+            .addField('Nom du serveur :', `${message.guild.name}`, true)
+            .addField('Nombre de membres :', `${message.guild.memberCount - message.guild.members.filter(m=>m.user.bot).size} (${message.guild.members.filter(m=>m.user.bot).size} bots)`, true)
+            .addField('Crée le :', message.guild.createdAt.toLocaleString(), true)
+            .addField('Niveau de vérification du serveur :', message.guild.verificationLevel, true)
+            .addField('Pseudo du propriétaire de ce serveur :', `${message.guild.owner.user.tag} (${message.guild.owner.id})`)
+            .addField('Région du serveur :', message.guild.region, true)
+            .addField('ID du serveur :', message.guild.id, true)
+            .addField('Temps avant d’être AFK :', `${message.guild.afkTimeout / 60} minutes`, true)
+            .addField('Nom du salon AFK:', `${message.guild.afkChannelID === null ? 'No AFK Channel' : bot.channels.get(message.guild.afkChannelID).name} (${message.guild.afkChannelID === null ? '' : message.guild.afkChannelID})`, true)
         message.reply({
             embed
         });
@@ -309,78 +282,29 @@ bot.on("message", async message => {
                     console.log(JSON.stringify(result, null, 2));
                     let beforeid = "nothing"
                     let id = "nothing"
-			
-		    	if (!result || !result.items || result.items.length < 1)
-			{
-				message.reply("Je n'ai rien trouvé")
-			}
-			else
-			{
-			    if (result.items[0].id.kind === "youtube#video") {
-				beforeid = "https://www.youtube.com/watch?v="
-				id = result.items[0].id.videoId
-			    } else if (result.items[0].id.kind === "youtube#playlist") {
-				beforeid = "https://www.youtube.com/playlist?list="
-				id = result.items[0].id.playlistId
-			    } else if (result.items[0].id.kind === "youtube#channel") {
-				beforeid = "https://www.youtube.com/channel/"
-				id = result.items[0].id.channelId
-			    }
-                    message.reply("résultat de votre recherche sur YouTube :\n" + beforeid + id)
-			}
+
+                    if (!result || !result.items || result.items.length < 1) {
+                        message.reply("je n'ai rien trouvé. :disappointed_relieved:")
+                    } else {
+                        if (result.items[0].id.kind === "youtube#video") {
+                            beforeid = "https://www.youtube.com/watch?v="
+                            id = result.items[0].id.videoId
+                        } else if (result.items[0].id.kind === "youtube#playlist") {
+                            beforeid = "https://www.youtube.com/playlist?list="
+                            id = result.items[0].id.playlistId
+                        } else if (result.items[0].id.kind === "youtube#channel") {
+                            beforeid = "https://www.youtube.com/channel/"
+                            id = result.items[0].id.channelId
+                        }
+                        message.reply("résultat de votre recherche sur YouTube :\n" + beforeid + id)
+                    }
                 }
 
             });
         }
     }
 
-    if (command === "google") {
-        var search = message.content.substring(8);
-        if (search == '') {
-            message.reply("vous devez entrer un mot clef après " + config.prefix + "google. :wink:");
-        } else {
-            google.resultsPerPage = 10000
-            var nextCounter = 0
-            google(suffix, function(err, res) {
-                if (err) console.error(err)
-                for (var i = 0; i < res.links.length; ++i) {
-                    var link = res.links[i];
-                    console.log(link.title + ' - ' + link.href)
-                    console.log(link.description + "\n")
-                    if (!link.href) {
-                        res.next
-                    } else {
-                        return message.reply("Votre recherche :mag: :\n" + link.href)
-                    }
-                }
-            })
-        }
-    }
-
-    if (command === "soy") {
-        var sayings = ["vous êtes con.",
-            "vous êtes sympatique.",
-            "vous êtes drôle.",
-            "vous êtes fou.",
-            "vous êtes un pyjama.",
-            "vous êtes charmant",
-            "vous êtes fatigant.",
-            "vous êtes lourd.",
-            "vous êtes fantastique.",
-            "vous êtes un salopard.",
-            "vous vendez des ordinateurs sous Microsoft Neptune.",
-            "vous cherchez à recréer Windows Update v4.",
-            "vous êtes arrogant.",
-            "vous êtes modérateur.",
-            "vous êtes administrateur.",
-            "vous allez refaire le CSS d'un site web.",
-            "vous me faites chier.",
-        ];
-        var result = Math.floor((Math.random() * sayings.length) + 0);
-        message.reply(sayings[result]);
-    }
-	
-	if (command === "joke") {
+    if (command === "joke") {
         var sayings = ["Pourquoi Bill Gates aurait mieux faire d’être agriculteur ?\nParce que Microsoft Windows plante sans arrêt.",
             "Un homme rentre dans un restaurant :\n– Garçon ! Servez-vous des nouilles ?\n– Bien-sûr monsieur, ici on sert tout le monde.",
             "Un motard va voir une blonde qui pousse sa voiture sur l’autoroute. Le motard lui demande :\n– Madame, votre voiture est en panne ?\n– Non non, elle est toute neuve !\n– Alors pourquoi êtes-vous en train de la pousser ?\n– Parce que le garagiste m’a dit d’aller à 50Km en ville et de la pousser un peu sur l’autoroute.",
@@ -448,6 +372,57 @@ bot.on("message", async message => {
         });
     }
 
+    if (command === "md5") {
+        var md5 = message.content.substring(6);
+
+        if (md5 == '') {
+            message.reply("vous devez entrer un mot ou une phrase après " + config.prefix + "md5. :wink:");
+        } else {
+            var question = message.content.substring(5);
+            message.reply("votre texte chiffré avec MD5 : " + MD5(md5));
+        }
+    }
+
+    if (command === "sha256") {
+        var sha256 = message.content.substring(9);
+
+        if (sha256 == '') {
+            message.reply("vous devez entrer un mot ou une phrase après " + config.prefix + "sha256. :wink:");
+        } else {
+            var question = message.content.substring(5);
+            message.reply("votre texte chiffré avec SHA256 : " + SHA256(sha256));
+        }
+    }
+
+    if (command === "eth") {
+        price.getCryptoPrice("EUR", "ETH").then(obj => {
+            message.reply("1 Ethereum vaut actuellement " + obj.price + "€.")
+        })
+        price.getCryptoPrice("USD", "ETH").then(obj => {
+            message.reply("1 Ethereum vaut actuellement " + obj.price + "$.")
+        })
+
+    }
+
+    if (command === "btc") {
+        price.getCryptoPrice("EUR", "BTC").then(obj => {
+            message.reply("1 Bitcoin vaut actuellement " + obj.price + "€.")
+        })
+        price.getCryptoPrice("USD", "BTC").then(obj => {
+            message.reply("1 Bitcoin vaut actuellement " + obj.price + "$.")
+        })
+    }
+
+    if (command === "xmr") {
+        price.getCryptoPrice("EUR", "XMR").then(obj => {
+            message.reply("1 Monero vaut actuellement " + obj.price + "€.")
+        })
+        price.getCryptoPrice("USD", "XMR").then(obj => {
+            message.reply("1 Monero vaut actuellement " + obj.price + "$.")
+        })
+    }
+
+
     if (command === "about") {
         message.reply("les informations à propos de WinkBOT vous ont été envoyés par MP ! :wink:");
         const uptime = process.uptime();
@@ -480,50 +455,53 @@ bot.on("message", async message => {
             .setFooter("WinkBOT " + config.version + " | Par " + config.author)
             .setThumbnail(bot.user.avatarURL)
             .setTimestamp()
-            .addField('Pseudo :', config.botname)
-            .addField('Nombre de serveur où ce bot est présent : ', bot.guilds.size)
-            .addField('Nombre de salons où ce bot est présent : ', bot.channels.size)
-            .addField('Nombre de personnes que ce bot sert : ', bot.users.size)
-            .addField('Allumé depuis : ', up.join(' '))
-            .addField('Version de Nodejs :', process.version)
-            .addField('Version de Discord.js : ', Discord.version)
-            .addField('Version de ' + config.botname + ' : ', config.version)
-            .addField('Développé par : ', config.author);
+            .addField('Pseudo :', `${config.botname}`, true)
+            .addField('Nombre de serveur où ce bot est présent : ', `${bot.guilds.size}`)
+            .addField('Nombre de salons où ce bot est présent : ', `${bot.channels.size}`)
+            .addField('Nombre de personnes que ce bot sert : ', `${bot.users.size}`)
+            .addField('Allumé depuis : ', `${up.join(' ')}`)
+            .addField('Version de Nodejs :', `${process.version}`, true)
+            .addField('Version de Discord.js : ', `${Discord.version}`, true)
+            .addField('Version de ' + config.botname + ' : ', config.version, true)
+            .addField('Développé par : ', `${config.author}`, true);
         message.author.sendMessage({
             embed
-        });
-	    .catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
+        }).catch(err => {
+            message.reply("je n'ai pas pu vous envoyer ce message... :disappointed_relieved:")
+        })
+
     }
 
     if (command === "help") {
         message.reply("la liste des commandes vient de vous être envoyé par MP ! :wink:");
 
-        if (message.author.id == (config.owner)) {
+        if ((message.author.id == (config.owner)) || (message.member.hasPermission('KICK_MEMBERS'))) {
             const embed = new Discord.RichEmbed()
                 .setAuthor("Aide de " + config.botname, bot.user.avatarURL)
 
                 .setColor(config.color)
                 .setDescription("Le préfixe des commandes de ce bot est : **" + config.prefix + "**\nSite internet : https://atnode.fr/projets/winkbot/\nCode source : https://github.com/Atnode/WinkBOT/")
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setTimestamp()
 
 
                 .addField("Commandes principales :",
-                    "**youtube** : Recherche une vidéo, une playlist ou une chaîne sur YouTube avec un mot clef\n**cat** : Affiche un joli gif de chat\n**gif** : Recherche un gif à partir d'un mot clef de manière aléatoire\n**joke** : Vous affiche une blague\n**reverse** : Inverser un mot ou une phrase\n**flip** : Pile ou face ?\n**ping** : Voir votre latence et celle de l'API de Discord\n**random** : Affiche de manière aléatoire un nombre compris entre 1 et 1000\n**question** : Poser une question au bot. Celle-ci doit être en anglais ou être mathématique (Ex : What  is the capital of France? ; 1+1)", true)
+                    "**youtube** : Recherche une vidéo, une playlist ou une chaîne sur YouTube avec un mot clef\n**cat** : Affiche un joli gif de chat\n**dog** : Affiche un joli gif de toutou\n**gif** : Recherche un gif à partir d'un mot clef de manière aléatoire\n**joke** : Vous affiche une blague\n**reverse** : Inverser un mot ou une phrase\n**flip** : Pile ou face ?\n**ping** : Voir votre latence et celle de l'API de Discord\n**random** : Affiche de manière aléatoire un nombre compris entre 1 et 1000\n**question** : Poser une question au bot. Celle-ci doit être en anglais ou être mathématique (Ex : What  is the capital of France? ; 1+1)", true)
 
                 .addField("Commandes useless :",
-                    "**google** : Envie de faire une p'tite recherche sur Google ?\n**soy** : Vous êtes...\n**weather** : Obtenir la météo de votre ville\n**lmgtfy** : Apprendre à utiliser un moteur de recherche\n**avatar** : Affiche votre avatar ou celui d'une autre personne\n**userinfo** : Affiche des informations sur vous ou l'utilisateur de votre choix\n**serverinfo** : Affiche des informations sur le serveur où vous êtes actuellement", true)
+                    "**avatar** : Affiche votre avatar ou celui d'une autre personne\n**userinfo** : Affiche des informations sur vous ou l'utilisateur de votre choix\n**serverinfo** : Affiche des informations sur le serveur où vous êtes actuellement\n**eth** : Affiche la valeur actuelle de l'Ethereum\n**btc** : Affiche la valeur actuelle du Bitcoin\n**xmr** : Affiche la valeur actuelle du Monero\n**md5** : Chiffre votre texte grâce à MD5\n**sha256** : Chiffre votre texte grâce à SHA256\n**invite** : Vous donne un lien pour inviter le bot\n**github** : Vous donne le lien du GitHub du bot", true)
 
                 .addField("Autres commandes :",
                     "**help** : Aide du bot\n**about** : Affiche diverses informations sur le bot", true)
 
                 .addField("Commandes d'administration :",
-                    "**say** : Faire parler le bot\n**reboot** : Redémarrer le bot\n**shutdown** : Arrêter le bot", true)
+                    "**say** : Faire parler le bot", true)
 
             message.author.sendMessage({
                 embed
+            }).catch(err => {
+                message.reply("je n'ai pas pu vous envoyer ce message... :disappointed_relieved:")
             })
-		.catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
 
         } else {
             const embed = new Discord.RichEmbed()
@@ -531,45 +509,28 @@ bot.on("message", async message => {
 
                 .setColor(config.color)
                 .setDescription("Le préfixe des commandes de ce bot est : **" + config.prefix + "**\nSite internet : https://atnode.fr/projets/winkbot/\nCode source : https://github.com/Atnode/WinkBOT/")
-                .setFooter("WinkBOT " + config.version + " | Développé par " + config.author)
+                .setFooter("WinkBOT " + config.version)
                 .setTimestamp()
 
 
                 .addField("Commandes principales :",
-                    "**youtube** : Recherche une vidéo, une playlist ou une chaîne sur YouTube avec un mot clef\n**cat** : Affiche un joli gif de chat\n**gif** : Recherche un gif à partir d'un mot clef de manière aléatoire\n**joke** : Vous affiche une blague\n**reverse** : Inverser un mot ou une phrase\n**flip** : Pile ou face ?\n**ping** : Voir votre latence et celle de l'API de Discord\n**random** : Affiche de manière aléatoire un nombre compris entre 1 et 1000\n**question** : Poser une question au bot. Celle-ci doit être en anglais ou être mathématique (Ex : What  is the capital of France? ; 1+1)", true)
+                    "**youtube** : Recherche une vidéo, une playlist ou une chaîne sur YouTube avec un mot clef\n**cat** : Affiche un joli gif de chat\n**dog** : Affiche un joli gif de toutou\n**gif** : Recherche un gif à partir d'un mot clef de manière aléatoire\n**joke** : Vous affiche une blague\n**reverse** : Inverser un mot ou une phrase\n**flip** : Pile ou face ?\n**ping** : Voir votre latence et celle de l'API de Discord\n**random** : Affiche de manière aléatoire un nombre compris entre 1 et 1000\n**question** : Poser une question au bot. Celle-ci doit être en anglais ou être mathématique (Ex : What  is the capital of France? ; 1+1)", true)
 
                 .addField("Commandes useless :",
-                    "**google** : Envie de faire une p'tite recherche sur Google ?\n**soy** : Vous êtes...\n**weather** : Obtenir la météo de votre ville\n**lmgtfy** : Apprendre à utiliser un moteur de recherche\n**avatar** : Affiche votre avatar ou celui d'une autre personne\n**userinfo** : Affiche des informations sur vous ou l'utilisateur de votre choix\n**serverinfo** : Affiche des informations sur le serveur où vous êtes actuellement", true)
+                    "**avatar** : Affiche votre avatar ou celui d'une autre personne\n**userinfo** : Affiche des informations sur vous ou l'utilisateur de votre choix\n**serverinfo** : Affiche des informations sur le serveur où vous êtes actuellement\n**eth** : Affiche la valeur actuelle de l'Ethereum\n**btc** : Affiche la valeur actuelle du Bitcoin\n**xmr** : Affiche la valeur actuelle du Monero\n**md5** : Chiffre votre texte grâce à MD5\n**sha256** : Chiffre votre texte grâce à SHA256\n**invite** : Vous donne un lien pour inviter le bot\n**github** : Vous donne le lien du GitHub du bot", true)
 
                 .addField("Autres commandes :",
                     "**help** : Aide du bot\n**about** : Affiche diverses informations sur le bot", true)
 
             message.author.sendMessage({
                 embed
+            }).catch(err => {
+                message.reply("je n'ai pas pu vous envoyer ce message... :disappointed_relieved:")
             })
-		.catch(() => message.reply("Je n'ai pas pu vous envoyer de MP"));
 
         }
 
 
-    }
-
-    if (command === "reboot") {
-        if (message.author.id == (config.owner)) {
-            message.reply("Redémarrage en cours... :arrows_counterclockwise:")
-            exec("forever restartall");
-        } else {
-            message.reply("vous ne pouvez pas me faire redémarer. :frowning:")
-        }
-    }
-
-    if (command === "kill") {
-        if (message.author.id == (config.owner)) {
-            message.reply("Ô malheur, ô souffrance...\nPourquoi m'avez-vous tué ? :disappointed_relieved:")
-            exec("forever stopall");
-        } else {
-            message.reply("vous ne pouvez pas me tuer. :grinning:")
-        }
     }
 
 });
