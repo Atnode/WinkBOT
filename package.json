@@ -1,7 +1,7 @@
 {
   "name": "winkbot",
-  "version": "1.2.0",
-  "description": "Un bot simple en nodejs pour Discord.",
+  "version": "1.3.0",
+  "description": "Un bot francophone pour Discord en javascript.",
   "main": "winkbot.js",
   "dependencies": {
     "child_process": "^1.0.2",
@@ -9,9 +9,9 @@
     "crypto-price": "^0.0.6",
     "discord.js": "^11.3.2",
     "node-wolfram": "^0.0.1",
-    "request": "^2.85.0",
+    "request": "^2.87.0",
     "superagent": "^3.8.3",
-    "util": "^0.10.3",
+    "util": "^0.11.0",
     "youtube-node": "^1.3.2"
   },
   "devDependencies": {},
@@ -20,18 +20,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Atnode/WinkBOT.git"
+    "url": "git@framagit.org:Atnode/WinkBOT.git"
   },
   "keywords": [
+    "français",
+    "french",
+    "robot",
     "bot",
-    "winkbot",
-    "discord",
-    "discord.js"
+    "Discord",
+    "Javascript",
+    "js"
   ],
   "author": "Atnode",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/Atnode/WinkBOT/issues"
-  },
-  "homepage": "https://github.com/Atnode/WinkBOT#readme"
+  "license": "GPL-3.0"
 }
